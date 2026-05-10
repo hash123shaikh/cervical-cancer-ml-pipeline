@@ -1,5 +1,26 @@
 # Cervical Cancer Risk-Based Screening — End-to-End ML Pipeline
 
+---------------------------
+**Step 1 — Initialise Git and make your first commit**
+
+git init
+git add .
+git commit -m "Initial commit: end-to-end ML pipeline for cervical cancer risk screening"
+
+**Step 2 — Connect to GitHub and push**
+Copy the two lines under "…or push an existing repository from the command line".
+
+git remote add origin https://github.com/YOUR_USERNAME/cervical-cancer-ml-pipeline.git
+git branch -M main
+git push -u origin main
+
+*GitHub will ask for your username and password. Important: GitHub no longer accepts your account password here. You need a Personal Access Token instead.*
+
+*Username:* hash123shaikh
+*Password:* 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
+
+------------------------
+
 A production-oriented machine learning system for cervical cancer risk-based
 screening stratification, combining a **supervised individual risk model** and
 an **unsupervised population stratification model** to generate actionable
