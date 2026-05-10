@@ -1,0 +1,35 @@
+version: "3.9"
+
+services:
+  cervical-ml:
+    build: .
+    container_name: cervical_cancer_ml
+    ports:
+      - "8000:8000"
+
+    # ── Volumes ──────────────────────────────────────────────────────────────
+    # Mounting data/, models/, logs/, and reports/ means:
+    #   • Artefacts produced inside the container are visible on the host
+    #   • The model survives container restarts (no re-training on every `up`)
+    #   • Logs can be tailed from the host without `docker exec`
+    volumes:
+      - ./data:/app/data
+      - ./models:/app/models
+      - ./logs:/app/logs
+      - ./reports:/app/reports
+
+    # ── Environment ───────────────────────────────────────────────────────────
+    environment:
+      PYTHONPATH:        /app
+      API_HOST:          "0.0.0.0"
+      API_PORT:          "8000"
+      DAILY_BATCH_SIZE:  "15"
+      DRIFT_THRESHOLD:   "0.15"
+      SCHEDULE_HOUR:     "6"
+      SCHEDULE_MINUTE:   "0"
+      LOG_LEVEL:         "INFO"
+
+    env_file:
+      - .env       # optional overrides — copy .env.example → .env
+
+    restart: unless-stopped

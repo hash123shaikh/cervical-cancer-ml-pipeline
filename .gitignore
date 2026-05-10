@@ -1,0 +1,52 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# ── Virtual environments ───────────────────────────────────────────────────────
+.venv/
+venv/
+env/
+ENV/
+.conda/
+
+# ── Environment / secrets ──────────────────────────────────────────────────────
+.env
+# (keep .env.example — it documents what variables are needed)
+
+# ── Data (too large for Git; reviewer runs scripts/download_data.py) ───────────
+data/raw/*.csv
+data/raw/*.db
+data/raw/*.json
+data/processed/
+
+# ── Trained artefacts (reproducible via scripts/initial_train.py) ─────────────
+models/
+!models/.gitkeep
+
+# ── Runtime outputs ────────────────────────────────────────────────────────────
+logs/
+!logs/.gitkeep
+reports/
+!reports/.gitkeep
+
+# ── IDE / OS ───────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.DS_Store
+Thumbs.db
+
+# ── Jupyter ───────────────────────────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ── Pytest ────────────────────────────────────────────────────────────────────
+.pytest_cache/
+.coverage
+htmlcov/
