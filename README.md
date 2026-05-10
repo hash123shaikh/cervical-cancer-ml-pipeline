@@ -74,78 +74,7 @@ immediate colposcopy referral.
 
 ## 2. Architecture
 
-```
-                    UCI Cervical Cancer Dataset (858 patients)
-                                      │
-                    ┌─────────────────┴──────────────────┐
-                    │                                    │
-              rows 0–599                          rows 600–857
-           (reference set)                       (stream set)
-                    │                                    │
-                    └──────── initial_train.py ──────────┘
-                                      │
-                                      ▼
-          ┌───────────────────────────────────────────────────────┐
-          │            DAILY PIPELINE CYCLE                       │
-          │            APScheduler  ·  06:00 UTC                  │
-          │                                                       │
-          │  ┌──────────────┐     ┌──────────────┐               │
-          │  │  Data        │     │ Preprocessor │               │
-          │  │  Generator   │────▶│  • NaN impute│               │
-          │  │  (+15 rows)  │     │  • clip P99  │               │
-          │  └──────────────┘     └──────┬───────┘               │
-          │         │                    │                        │
-          │         ▼                    ▼                        │
-          │    ┌──────────┐     ┌────────────────────┐           │
-          │    │  SQLite  │     │  Feature Engineer  │           │
-          │    │ raw_rows │     │  • stds_total      │           │
-          │    └──────────┘     │  • is_smoker       │           │
-          │                     │  • age_group       │           │
-          │                     │  • high_risk_stds  │           │
-          │                     └────────┬───────────┘           │
-          │                              │                        │
-          │              ┌───────────────┴───────────────┐        │
-          │              │                               │        │
-          │              ▼                               ▼        │
-          │   ┌─────────────────────┐   ┌──────────────────────┐ │
-          │   │  BRANCH A           │   │  BRANCH B            │ │
-          │   │  Supervised         │   │  Unsupervised        │ │
-          │   │                     │   │                      │ │
-          │   │  XGBoost Classifier │   │  K-means Clustering  │ │
-          │   │  • 5-fold CV        │   │  • k selected by     │ │
-          │   │  • scale_pos_weight │   │    silhouette score  │ │
-          │   │  • SHAP attributions│   │  • strata labelled   │ │
-          │   │                     │   │    by biopsy rate    │ │
-          │   │  Output:            │   │                      │ │
-          │   │  P(cancer)          │   │  Output:             │ │
-          │   │  per patient        │   │  low / moderate /    │ │
-          │   └──────────┬──────────┘   │  high risk stratum   │ │
-          │              │              └──────────┬───────────┘ │
-          │              │                         │             │
-          │              └────────────┬────────────┘             │
-          │                           │                           │
-          │                           ▼                           │
-          │              ┌────────────────────────┐              │
-          │              │  Drift Detector        │              │
-          │              │  (Evidently AI)        │              │
-          │              │  → retrain if drift    │              │
-          │              └────────────────────────┘              │
-          └───────────────────────────────────────────────────────┘
-                                      │
-                        ┌─────────────▼─────────────┐
-                        │      FastAPI  :8000        │
-                        │                            │
-                        │  POST /predict             │ ← supervised only
-                        │  POST /screening-          │ ← BOTH branches fused
-                        │       recommendation       │
-                        │  GET  /strata/summary      │ ← population view
-                        │  GET  /drift/status        │
-                        │  GET  /drift/report        │
-                        │  GET  /metrics             │
-                        │  GET  /health              │
-                        │  POST /pipeline/trigger    │
-                        └────────────────────────────┘
-```
+![System Architecture](assets/architecture_main.png)
 
 ---
 
@@ -501,6 +430,8 @@ The `escalated: true` flag shows the integration logic at work — the patient's
 ## 10. Extension: National Registry Scale
 
 This section documents how the pipeline would extend to the full research scenario described in the doctoral project — Sweden's national quality registry for cervical cancer prevention, with HPV genotyping, longitudinal screening history, and population-scale data.
+
+![TCGA-CESC Extension Pipeline](assets/architecture_tcga_extension.png)
 
 ### Data layer changes
 
