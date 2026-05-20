@@ -36,19 +36,19 @@ def main() -> None:
     from src.training.trainer           import train
     from src.drift.drift_detector       import save_reference
 
-    logger.info("─── 1/5  Initialising database")
+    logger.info("─── 1/6  Initialising database")
     init_db()
 
-    logger.info("─── 2/5  Loading and ingesting reference data")
+    logger.info("─── 2/6  Loading and ingesting reference data")
     ref_df = get_reference_data()
     ingest_batch(ref_df)
     logger.info("      %d reference rows ingested.", len(ref_df))
 
-    logger.info("─── 3/5  Preprocessing")
+    logger.info("─── 3/6  Preprocessing")
     processed_df, stats = preprocess(ref_df, fit=True)
     save_stats(stats)
 
-    logger.info("─── 4/5  Feature engineering")
+    logger.info("─── 4/6  Feature engineering")
     featured_df = engineer_features(processed_df)
     save_processed(featured_df, split="train")
     logger.info(
