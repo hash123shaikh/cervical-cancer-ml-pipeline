@@ -1,9 +1,53 @@
 # Cervical Cancer Risk-Based Screening — End-to-End ML Pipeline
 
-A production-oriented machine learning system for cervical cancer risk-based
-screening stratification, combining a **supervised individual risk model** and
-an **unsupervised population stratification model** to generate actionable
-screening interval recommendations.
+## Problem Statement
+
+Cervical cancer is one of the most preventable cancers, yet it remains a leading
+cause of cancer death in women globally. The key challenge is not detection — it
+is **risk-based triage at population scale**: identifying which patients need
+immediate colposcopy referral, which need early recall in 12 months, and which
+can safely return to routine 3-year screening.
+
+This system addresses that challenge by building a production-oriented ML pipeline
+that combines two complementary approaches:
+
+- **Supervised learning (XGBoost)** — predicts each individual patient's cancer
+  probability from clinical risk factors, with SHAP attributions explaining which
+  features drive the prediction
+- **Unsupervised learning (K-means)** — stratifies the full patient population
+  into risk groups, mirroring how national screening programmes define recall
+  policies across cohorts rather than individuals
+
+The two outputs are fused to generate an actionable **screening interval
+recommendation** per patient: routine recall (3 years), early recall (12 months),
+or immediate colposcopy referral.
+
+The pipeline is designed to be data-source-agnostic — the ingestion layer is the
+only component that changes when moving from the UCI demo dataset to a national
+registry such as Sweden's NKCK (NKCx), with HPV genotyping, longitudinal
+screening history, and population-scale registry linkage.
+
+---
+
+## Run in one command
+
+```bash
+git clone https://github.com/hash123shaikh/cervical-cancer-ml-pipeline.git
+cd cervical-cancer-ml-pipeline
+docker compose up
+```
+
+That is all. Docker will:
+1. Install all dependencies automatically
+2. Download the UCI dataset
+3. Train the model and risk stratifier
+4. Start the API server
+
+**API available at: http://localhost:8000**
+**Interactive docs at: http://localhost:8000/docs**
+
+> First run takes 5–8 minutes (compiling dependencies). Every subsequent run
+> takes ~20 seconds because the trained model persists via Docker volume.
 
 ---
 
@@ -152,37 +196,66 @@ with the same `run_pipeline_cycle()` function becoming an Airflow task.
 
 ## 4. Quick Start
 
-### Option A — Docker (recommended)
+### Option A — Docker (recommended, zero setup)
 
 ```bash
-# Clone and enter
-git clone <repo-url>
-cd cervical-cancer-ml
+# 1. Clone the repository
+git clone https://github.com/hash123shaikh/cervical-cancer-ml-pipeline.git
+cd cervical-cancer-ml-pipeline
 
-# First run: builds image, downloads UCI dataset, trains model, starts API
-docker-compose up
+# 2. Start everything
+docker compose up
 ```
 
-The first run downloads the dataset (~150 KB) and trains the model inside
-the container. Subsequent `docker-compose up` calls skip training because the
-model is persisted via the mounted `./models` volume.
+> **Linux users**: if you get a Docker socket error, use `sudo docker compose up`
+> on first run. To avoid sudo permanently: `sudo usermod -aG docker $USER`
+> then log out and back in.
 
-API is available at **http://localhost:8000** · Docs at **http://localhost:8000/docs**
+**What happens automatically on first run:**
+- Docker builds the image and installs all 15 pinned dependencies
+- Downloads the UCI Cervical Cancer dataset (~150 KB)
+- Trains XGBoost model with 5-fold cross-validation
+- Fits K-means risk stratifier with silhouette-optimised k
+- Starts FastAPI server with background daily scheduler
 
-### Option B — Local Python
+**Ready when you see:**
+```
+Uvicorn running on http://0.0.0.0:8000
+Scheduler running — pipeline fires daily at 06:00 UTC
+```
+
+**Test it immediately (open a second terminal):**
+```bash
+# Individual prediction
+curl -X POST http://localhost:8000/predict \
+  -H "Content-Type: application/json" \
+  -d '{"age": 29, "smokes": 1, "stds_hpv": 1}'
+
+# Full screening recommendation (both ML branches)
+curl -X POST http://localhost:8000/screening-recommendation \
+  -H "Content-Type: application/json" \
+  -d '{"age": 29, "smokes": 1, "stds_hpv": 1}'
+
+# Trigger a pipeline cycle manually
+curl -X POST http://localhost:8000/pipeline/trigger
+
+# Check drift status
+curl http://localhost:8000/drift/status
+```
+
+**Stop:**
+```bash
+docker compose down
+```
+
+---
+
+### Option B — Local Python (for development)
 
 ```bash
-# Install dependencies
 pip install -r requirements.txt
-
-# Or use the Makefile
-make setup
-
-# Download data + train
-make train
-
-# Start the API server (includes background scheduler)
-make run
+python scripts/initial_train.py
+python src/serving/api.py
 ```
 
 ### Trigger a pipeline cycle manually
